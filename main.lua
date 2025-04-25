@@ -1,25 +1,38 @@
--- GUI + Gravity Skill XP Farm Script
-local player = game.Players.LocalPlayer
-local rs = game:GetService("ReplicatedStorage")
-local remote = rs:WaitForChild("ReplicatorNoYield")
+-- DOMFRUITHUB v2 - Full Script
+-- Features: Dynamic fruit skill spam, auto boss farming, teleport to Kuma, saved positions, anti-detection
 
-local fruitName = "Gravity"
-local skillList = {
-    "Push",
-    "Launch",
-    "Avalanche",
-    "Shoot",
-    "PlanetaryDevastation",
-    "GreatMeteor"
-}
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local remote = ReplicatedStorage:WaitForChild("ReplicatorNoYield")
 
 local farming = false
-local safeFarmPosition = Vector3.new(3000, 50, -1200) -- update this if you find a better spot
+local bossFarming = false
+local selectedSlot = 1
+local savedPositions = {[1] = nil, [2] = nil, [3] = nil, [4] = nil, [5] = nil}
 
--- MouseRay builder
-local function getMouseRay()
+local fruitSkills = {
+    Gravity = {"Push", "Launch", "Avalanche", "Shoot", "PlanetaryDevastation", "GreatMeteor"},
+    Flame = {"FireBall", "FirePillar", "FlameDash", "HellRain"},
+    Light = {"LightKick", "Teleport", "HeavenlyBeam", "LightSpeed"},
+    -- Add more fruits/skills here
+}
+
+local function getCurrentFruit()
+    local char = LocalPlayer.Character
+    if not char then return "Unknown" end
+    for _, v in ipairs(char:GetChildren()) do
+        if v:IsA("StringValue") and v.Name:lower():find("fruit") then
+            return v.Value
+        end
+    end
+    return "Unknown"
+end
+
+local function getMouseRay(targetPos)
     local origin = workspace.CurrentCamera.CFrame.Position
-    local direction = Vector3.new(0, -1, 0) * 100
+    local direction = (targetPos - origin).Unit * 100
     return {
         MouseRay = {
             Origin = origin,
@@ -29,55 +42,120 @@ local function getMouseRay()
     }
 end
 
--- Farming loop
-task.spawn(function()
-    while true do
-        if farming then
-            for _, skill in ipairs(skillList) do
-                remote:FireServer(fruitName, skill, getMouseRay())
-                task.wait(0.5)
+local function getBoss()
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and (v.Name == "Marco" or v.Name == "Katakuri" or v.Name == "Kaido") then
+            local hrp = v:FindFirstChild("HumanoidRootPart")
+            local hp = v:FindFirstChildOfClass("Humanoid")
+            if hrp and hp and hp.Health > 0 then
+                return hrp
             end
         end
-        task.wait(2)
     end
-end)
+    return nil
+end
 
--- Teleport to safe zone
-local function teleportToSafeSpot()
-    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = CFrame.new(safeFarmPosition)
+local function teleportToNPC(name)
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and v.Name == name and v:FindFirstChild("HumanoidRootPart") then
+            Character:WaitForChild("HumanoidRootPart").CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+            return
+        end
     end
 end
 
--- Simple GUI
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "FruitHubUI"
+-- Skill spam loop
+spawn(function()
+    while wait(math.random(1.2, 2.5)) do
+        if farming then
+            local fruit = getCurrentFruit()
+            local skills = fruitSkills[fruit]
+            if skills then
+                local rayTarget = bossFarming and getBoss() or (Character:FindFirstChild("HumanoidRootPart") and Character.HumanoidRootPart.Position - Vector3.new(0, 10, 0))
+                if rayTarget then
+                    for _, skill in ipairs(skills) do
+                        remote:FireServer(fruit, skill, getMouseRay(rayTarget.Position or rayTarget))
+                        wait(math.random(0.4, 0.8))
+                    end
+                end
+            end
+        end
+    end
+end)
 
+-- GUI Setup
+local gui = Instance.new("ScreenGui", game.CoreGui)
 local frame = Instance.new("Frame", gui)
 frame.Position = UDim2.new(0.05, 0, 0.3, 0)
-frame.Size = UDim2.new(0, 200, 0, 120)
+frame.Size = UDim2.new(0, 260, 0, 250)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 0
 
-local toggleButton = Instance.new("TextButton", frame)
-toggleButton.Position = UDim2.new(0, 10, 0, 10)
-toggleButton.Size = UDim2.new(0, 180, 0, 40)
-toggleButton.Text = "Toggle Farm: OFF"
-toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+local function createButton(text, posY)
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0, 240, 0, 30)
+    btn.Position = UDim2.new(0, 10, 0, posY)
+    btn.Text = text
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    return btn
+end
 
-toggleButton.MouseButton1Click:Connect(function()
+-- GUI Buttons
+local farmBtn = createButton("Toggle Skill Farm: OFF", 10)
+farmBtn.MouseButton1Click:Connect(function()
     farming = not farming
-    toggleButton.Text = farming and "Toggle Farm: ON" or "Toggle Farm: OFF"
+    farmBtn.Text = farming and "Toggle Skill Farm: ON" or "Toggle Skill Farm: OFF"
 end)
 
-local tpButton = Instance.new("TextButton", frame)
-tpButton.Position = UDim2.new(0, 10, 0, 60)
-tpButton.Size = UDim2.new(0, 180, 0, 40)
-tpButton.Text = "📍 Teleport to Farm Spot"
-tpButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-tpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+local bossBtn = createButton("Toggle Boss Farm: OFF", 50)
+bossBtn.MouseButton1Click:Connect(function()
+    bossFarming = not bossFarming
+    bossBtn.Text = bossFarming and "Toggle Boss Farm: ON" or "Toggle Boss Farm: OFF"
+end)
 
-tpButton.MouseButton1Click:Connect(teleportToSafeSpot)
+local kumaBtn = createButton("🧍‍♂️ Teleport to Kuma", 90)
+kumaBtn.MouseButton1Click:Connect(function()
+    teleportToNPC("Kuma")
+end)
 
-print("✅ Fruit XP GUI Loaded")
+-- Saved slot controls
+local slotLabel = Instance.new("TextLabel", frame)
+slotLabel.Position = UDim2.new(0, 10, 0, 130)
+slotLabel.Size = UDim2.new(0, 240, 0, 20)
+slotLabel.Text = "Selected Slot: 1"
+slotLabel.BackgroundTransparency = 1
+slotLabel.TextColor3 = Color3.new(1,1,1)
+
+local prevSlot = createButton("< Slot", 155)
+prevSlot.Size = UDim2.new(0, 115, 0, 30)
+prevSlot.MouseButton1Click:Connect(function()
+    selectedSlot = math.max(1, selectedSlot - 1)
+    slotLabel.Text = "Selected Slot: "..selectedSlot
+end)
+
+local nextSlot = createButton("Slot >", 155)
+nextSlot.Position = UDim2.new(0, 135, 0, 155)
+nextSlot.Size = UDim2.new(0, 115, 0, 30)
+nextSlot.MouseButton1Click:Connect(function()
+    selectedSlot = math.min(5, selectedSlot + 1)
+    slotLabel.Text = "Selected Slot: "..selectedSlot
+end)
+
+local saveBtn = createButton("💾 Save Position", 195)
+saveBtn.MouseButton1Click:Connect(function()
+    local hrp = Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        savedPositions[selectedSlot] = hrp.CFrame
+    end
+end)
+
+local tpSlotBtn = createButton("📍 Teleport to Slot", 235)
+tpSlotBtn.MouseButton1Click:Connect(function()
+    local hrp = Character:FindFirstChild("HumanoidRootPart")
+    if hrp and savedPositions[selectedSlot] then
+        hrp.CFrame = savedPositions[selectedSlot]
+    end
+end)
+
+print("✅ DOMFRUITHUB v2 Loaded")
