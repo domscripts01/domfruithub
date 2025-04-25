@@ -1,5 +1,4 @@
--- DOMFRUITHUB REBUILD - Works Based on Confirmed Functional Structure
--- Auto skill spam per fruit, auto boss farm, TP to Kuma, slot save/load system
+-- DOMFRUITHUB FINAL FIX - GUI fixed, skill spam by current fruit, slot label added
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -7,7 +6,11 @@ local player = Players.LocalPlayer
 local Character = player.Character or player.CharacterAdded:Wait()
 local remote = ReplicatedStorage:WaitForChild("ReplicatorNoYield")
 
+local fruit = "Unknown"
+local skillList = {}
+
 local fruitSkills = {
+    Gravity = {"Push", "Launch", "Avalanche", "Shoot", "PlanetaryDevastation", "GreatMeteor"},
     Barrier = {"Barrier Wall", "Barrier Crush", "Barrier Dome", "Barrier Pistol"},
     Chop = {"Chop Punch", "Chop Car", "Chop Festival"},
     Sand = {"Desert Spada", "Desert Funeral", "Sables", "Sandstorm"},
@@ -27,7 +30,7 @@ local fruitSkills = {
     Love = {"Cupid's Arrows", "Bouquet of Pain", "Heartthrob", "Heartstrings", "Blossom Wind"},
     Snow = {"Snowball", "Snow Storm", "Snowman Summon", "Blizzard"},
     Quake = {"Quake Punch", "Quake Slam", "Sea Quake", "Quake Tsunami"},
-    Gravity = {"Push", "Launch", "Avalanche", "Shoot", "PlanetaryDevastation", "GreatMeteor"},
+    Gravity = {"Gravity Push", "Gravity Pull", "Meteor Shower", "Planetary Devastation"},
     Phoenix = {"Phoenix Claw", "Phoenix Flight", "Blue Flames", "Phoenix Rebirth"},
     Dragon = {"Dragon Roar", "Dragon Claw", "Dragon Flight", "Dragon Transformation"},
     TSRubber = {"Red Hawk", "Jet Pistol", "Jet Gatling", "Elephant Gun"},
@@ -64,11 +67,6 @@ local function getMouseRay()
     return { MouseRay = Ray.new(origin, direction) }
 end
 
-local function teleportToSafe(pos)
-    local hrp = Character:FindFirstChild("HumanoidRootPart")
-    if hrp then hrp.CFrame = CFrame.new(pos) end
-end
-
 local function getBoss()
     for _, v in ipairs(workspace:GetDescendants()) do
         if v:IsA("Model") and (v.Name == "Marco" or v.Name == "Kaido" or v.Name == "Katakuri") then
@@ -97,12 +95,17 @@ local saved = {[1]=nil,[2]=nil,[3]=nil,[4]=nil,[5]=nil}
 spawn(function()
     while task.wait(1.5) do
         if farming then
-            local fruit = getCurrentFruit()
-            local skills = fruitSkills[fruit]
-            local ray = getMouseRay()
-            local target = bossFarm and getBoss()
-            if target then ray = {MouseRay = Ray.new(workspace.CurrentCamera.CFrame.Position, (target.Position - workspace.CurrentCamera.CFrame.Position).Unit * 100)} end
-            if skills then for _, skill in ipairs(skills) do remote:FireServer(fruit, skill, ray) task.wait(0.4) end end
+            fruit = getCurrentFruit()
+            skillList = fruitSkills[fruit] or {}
+            if #skillList > 0 then
+                local ray = getMouseRay()
+                local target = bossFarm and getBoss()
+                if target then ray = {MouseRay = Ray.new(workspace.CurrentCamera.CFrame.Position, (target.Position - workspace.CurrentCamera.CFrame.Position).Unit * 100)} end
+                for _, skill in ipairs(skillList) do
+                    remote:FireServer(fruit, skill, ray)
+                    task.wait(0.4)
+                end
+            end
         end
     end
 end)
@@ -111,7 +114,7 @@ end)
 local gui = Instance.new("ScreenGui", game.CoreGui)
 local frame = Instance.new("Frame", gui)
 frame.Position = UDim2.new(0.05, 0, 0.3, 0)
-frame.Size = UDim2.new(0, 260, 0, 260)
+frame.Size = UDim2.new(0, 260, 0, 280)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 
 local function makeBtn(text, y)
@@ -139,12 +142,29 @@ end)
 makeBtn("Teleport to Slot", 170).MouseButton1Click:Connect(function()
     if saved[slot] then Character.HumanoidRootPart.CFrame = saved[slot] end
 end)
-makeBtn("< Slot", 210).MouseButton1Click:Connect(function()
+
+-- Slot label
+local slotLabel = Instance.new("TextLabel", frame)
+slotLabel.Position = UDim2.new(0, 10, 0, 210)
+slotLabel.Size = UDim2.new(0, 240, 0, 20)
+slotLabel.Text = "Selected Slot: 1"
+slotLabel.BackgroundTransparency = 1
+slotLabel.TextColor3 = Color3.new(1,1,1)
+
+-- Slot buttons
+local leftBtn = makeBtn("< Slot", 240)
+leftBtn.Size = UDim2.new(0, 120, 0, 30)
+leftBtn.MouseButton1Click:Connect(function()
     slot = math.max(1, slot - 1)
-end)
-makeBtn("Slot >", 210).Position = UDim2.new(0, 135, 0, 210)
-makeBtn("Slot >", 210).MouseButton1Click:Connect(function()
-    slot = math.min(5, slot + 1)
+    slotLabel.Text = "Selected Slot: "..slot
 end)
 
-print("✅ DOMFRUITHUB FINAL BUILD READY")
+local rightBtn = makeBtn("Slot >", 240)
+rightBtn.Position = UDim2.new(0, 140, 0, 240)
+rightBtn.Size = UDim2.new(0, 110, 0, 30)
+rightBtn.MouseButton1Click:Connect(function()
+    slot = math.min(5, slot + 1)
+    slotLabel.Text = "Selected Slot: "..slot
+end)
+
+print("✅ DOMFRUITHUB FINAL CLEAN BUILD READY")
