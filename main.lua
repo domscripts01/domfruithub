@@ -3,13 +3,14 @@ local player = game.Players.LocalPlayer
 local rs = game:GetService("ReplicatedStorage")
 local remote = rs:WaitForChild("ReplicatorNoYield")
 
-local fruitName = "Okuchi"
+local fruitName = "Gravity"
 local skillList = {
-    "Wolf Fang",
-    "Wolf Howl",
-    "Wolf Dash",
-    "Wolf Transformation",
-    
+    "Push",
+    "Launch",
+    "Avalanche",
+    "Shoot",
+    "PlanetaryDevastation",
+    "GreatMeteor"
 }
 
 local farming = false
