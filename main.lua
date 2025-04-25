@@ -1,11 +1,9 @@
--- DOMFRUITHUB AUTO FRUIT DETECTION
+-- DOMFRUITHUB + Manual Fruit Picker GUI
 local player = game.Players.LocalPlayer
 local rs = game:GetService("ReplicatedStorage")
 local remote = rs:WaitForChild("ReplicatorNoYield")
 
-local safeFarmPosition = Vector3.new(3000, 50, -1200)
-local farming = false
-
+-- 🧠 Full fruit table
 local fruitSkills = {
     Barrier = {"Barrier Wall", "Barrier Crush", "Barrier Dome", "Barrier Pistol"},
     Chop = {"Chop Punch", "Chop Car", "Chop Festival"},
@@ -48,27 +46,12 @@ local fruitSkills = {
     Okuchi = {"Wolf Fang", "Wolf Howl", "Wolf Dash", "Wolf Transformation"}
 }
 
-local function getCurrentFruit()
-    local char = player.Character or player.CharacterAdded:Wait()
-    
-    -- Deep scan inside all descendants
-    for _, v in ipairs(char:GetDescendants()) do
-        if v:IsA("StringValue") and v.Name:lower():find("fruit") and fruitSkills[v.Value] then
-            return v.Value
-        end
-    end
-    
-    -- Fallback top-level scan
-    for _, v in ipairs(char:GetChildren()) do
-        if v:IsA("StringValue") and v.Name:lower():find("fruit") and fruitSkills[v.Value] then
-            return v.Value
-        end
-    end
-    
-    return "Unknown"
-end
+local fruitName = "Gravity"
+local skillList = fruitSkills[fruitName]
+local farming = false
+local safeFarmPosition = Vector3.new(3000, 50, -1200)
 
-
+-- MouseRay builder
 local function getMouseRay()
     local origin = workspace.CurrentCamera.CFrame.Position
     local direction = Vector3.new(0, -1, 0) * 100
@@ -84,14 +67,10 @@ end
 -- Farming loop
 task.spawn(function()
     while true do
-        if farming then
-            local fruit = getCurrentFruit()
-            local skillList = fruitSkills[fruit]
-            if skillList then
-                for _, skill in ipairs(skillList) do
-                    remote:FireServer(fruit, skill, getMouseRay())
-                    task.wait(0.5)
-                end
+        if farming and skillList then
+            for _, skill in ipairs(skillList) do
+                remote:FireServer(fruitName, skill, getMouseRay())
+                task.wait(0.5)
             end
         end
         task.wait(2)
@@ -105,33 +84,60 @@ local function teleportToSafeSpot()
     end
 end
 
--- Simple GUI
+-- GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "FruitHubUI"
 
 local frame = Instance.new("Frame", gui)
 frame.Position = UDim2.new(0.05, 0, 0.3, 0)
-frame.Size = UDim2.new(0, 200, 0, 120)
+frame.Size = UDim2.new(0, 220, 0, 180)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 0
 
-local toggleButton = Instance.new("TextButton", frame)
-toggleButton.Position = UDim2.new(0, 10, 0, 10)
-toggleButton.Size = UDim2.new(0, 180, 0, 40)
-toggleButton.Text = "Toggle Farm: OFF"
-toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+local function makeButton(text, y, callback)
+    local btn = Instance.new("TextButton", frame)
+    btn.Position = UDim2.new(0, 10, 0, y)
+    btn.Size = UDim2.new(0, 200, 0, 30)
+    btn.Text = text
+    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
 
-toggleButton.MouseButton1Click:Connect(function()
+makeButton("Toggle Farm: OFF", 10, function(self)
     farming = not farming
-    toggleButton.Text = farming and "Toggle Farm: ON" or "Toggle Farm: OFF"
+    self.Text = farming and "Toggle Farm: ON" or "Toggle Farm: OFF"
 end)
 
-local tpButton = Instance.new("TextButton", frame)
-tpButton.Position = UDim2.new(0, 10, 0, 60)
-tpButton.Size = UDim2.new(0, 180, 0, 40)
-tpButton.Text = "📍 Teleport to Farm Spot"
-tpButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-tpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+makeButton("📍 Teleport to Safe Spot", 50, teleportToSafeSpot)
 
-tpButton.MouseButton1Click:Connect(teleportToSafeSpot)
+-- Fruit selector button
+local fruitLabel = Instance.new("TextLabel", frame)
+fruitLabel.Position = UDim2.new(0, 10, 0, 90)
+fruitLabel.Size = UDim2.new(0, 200, 0, 20)
+fruitLabel.BackgroundTransparency = 1
+fruitLabel.TextColor3 = Color3.new(1, 1, 1)
+fruitLabel.Text = "Current Fruit: " .. fruitName
+
+local currentIndex = 1
+local fruitList = {}
+
+for k in pairs(fruitSkills) do table.insert(fruitList, k) end
+table.sort(fruitList)
+
+makeButton("< Previous Fruit", 120, function()
+    currentIndex = currentIndex - 1
+    if currentIndex < 1 then currentIndex = #fruitList end
+    fruitName = fruitList[currentIndex]
+    skillList = fruitSkills[fruitName]
+    fruitLabel.Text = "Current Fruit: " .. fruitName
+end)
+
+makeButton("Next Fruit >", 160, function()
+    currentIndex = currentIndex + 1
+    if currentIndex > #fruitList then currentIndex = 1 end
+    fruitName = fruitList[currentIndex]
+    skillList = fruitSkills[fruitName]
+    fruitLabel.Text = "Current Fruit: " .. fruitName
+end)
