@@ -75,19 +75,25 @@ end
 local farming = false
 
 -- Farming loop
-task.spawn(function()
-    while true do
+spawn(function()
+    while task.wait(1.5) do
         if farming then
-            local fruitName = getCurrentFruit()
-            local skillList = fruitSkills[fruitName]
-            if skillList then
+            Character = player.Character or player.CharacterAdded:Wait() -- 🔥 THIS LINE FIXES IT
+            fruit = getCurrentFruit()
+            skillList = fruitSkills[fruit] or {}
+
+            if #skillList > 0 then
+                local ray = getMouseRay()
+                local target = bossFarm and getBoss()
+                if target then
+                    ray = {MouseRay = Ray.new(workspace.CurrentCamera.CFrame.Position, (target.Position - workspace.CurrentCamera.CFrame.Position).Unit * 100)}
+                end
                 for _, skill in ipairs(skillList) do
-                    remote:FireServer(fruitName, skill, getMouseRay())
-                    task.wait(0.5)
+                    remote:FireServer(fruit, skill, ray)
+                    task.wait(0.4)
                 end
             end
         end
-        task.wait(2)
     end
 end)
 
