@@ -90,27 +90,17 @@ gui.Name = "FruitHubUI"
 
 local frame = Instance.new("Frame", gui)
 frame.Position = UDim2.new(0.05, 0, 0.3, 0)
-frame.Size = UDim2.new(0, 220, 0, 180)
+frame.Size = UDim2.new(0, 200, 0, 120)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 frame.BorderSizePixel = 0
 
-local function makeButton(text, y, callback)
-    local btn = Instance.new("TextButton", frame)
-    btn.Position = UDim2.new(0, 10, 0, y)
-    btn.Size = UDim2.new(0, 200, 0, 30)
-    btn.Text = text
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.MouseButton1Click:Connect(callback)
-    return btn
-end
-
 local toggleButton = Instance.new("TextButton", frame)
 toggleButton.Position = UDim2.new(0, 10, 0, 10)
-toggleButton.Size = UDim2.new(0, 200, 0, 30)
+toggleButton.Size = UDim2.new(0, 180, 0, 40)
 toggleButton.Text = "Toggle Farm: OFF"
 toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+
 toggleButton.MouseButton1Click:Connect(function()
     farming = not farming
     toggleButton.Text = farming and "Toggle Farm: ON" or "Toggle Farm: OFF"
