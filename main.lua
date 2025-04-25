@@ -105,9 +105,15 @@ local function makeButton(text, y, callback)
     return btn
 end
 
-makeButton("Toggle Farm: OFF", 10, function(self)
+local toggleButton = Instance.new("TextButton", frame)
+toggleButton.Position = UDim2.new(0, 10, 0, 10)
+toggleButton.Size = UDim2.new(0, 200, 0, 30)
+toggleButton.Text = "Toggle Farm: OFF"
+toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.MouseButton1Click:Connect(function()
     farming = not farming
-    self.Text = farming and "Toggle Farm: ON" or "Toggle Farm: OFF"
+    toggleButton.Text = farming and "Toggle Farm: ON" or "Toggle Farm: OFF"
 end)
 
 makeButton("📍 Teleport to Safe Spot", 50, teleportToSafeSpot)
