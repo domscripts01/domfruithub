@@ -69,11 +69,7 @@ local function getMouseRay(targetPos)
     local origin = workspace.CurrentCamera.CFrame.Position
     local direction = (targetPos - origin).Unit * 100
     return {
-        MouseRay = {
-            Origin = origin,
-            Direction = direction,
-            UnitRay = Ray.new(origin, direction)
-        }
+        MouseRay = Ray.new(origin, direction)
     }
 end
 
