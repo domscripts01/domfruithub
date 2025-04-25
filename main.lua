@@ -49,13 +49,25 @@ local fruitSkills = {
 }
 
 local function getCurrentFruit()
-    for _, v in ipairs(player.Character:GetChildren()) do
-        if v:IsA("StringValue") and v.Name:lower():find("fruit") then
+    local char = player.Character or player.CharacterAdded:Wait()
+    
+    -- Deep scan inside all descendants
+    for _, v in ipairs(char:GetDescendants()) do
+        if v:IsA("StringValue") and v.Name:lower():find("fruit") and fruitSkills[v.Value] then
             return v.Value
         end
     end
+    
+    -- Fallback top-level scan
+    for _, v in ipairs(char:GetChildren()) do
+        if v:IsA("StringValue") and v.Name:lower():find("fruit") and fruitSkills[v.Value] then
+            return v.Value
+        end
+    end
+    
     return "Unknown"
 end
+
 
 local function getMouseRay()
     local origin = workspace.CurrentCamera.CFrame.Position
