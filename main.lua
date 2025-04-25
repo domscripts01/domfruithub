@@ -1,8 +1,9 @@
--- DOMFRUITHUB v2 - Full Script
--- Features: Dynamic fruit skill spam, auto boss farming, teleport to Kuma, saved positions, anti-detection
+-- DOMFRUITHUB v2 - Updated to use skills via input 1–6 (MouseButton1 for triggering)
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local remote = ReplicatedStorage:WaitForChild("ReplicatorNoYield")
@@ -11,24 +12,6 @@ local farming = false
 local bossFarming = false
 local selectedSlot = 1
 local savedPositions = {[1] = nil, [2] = nil, [3] = nil, [4] = nil, [5] = nil}
-
-local fruitSkills = {
-    Gravity = {"Push", "Launch", "Avalanche", "Shoot", "PlanetaryDevastation", "GreatMeteor"},
-    Flame = {"FireBall", "FirePillar", "FlameDash", "HellRain"},
-    Light = {"LightKick", "Teleport", "HeavenlyBeam", "LightSpeed"},
-    -- Add more fruits/skills here
-}
-
-local function getCurrentFruit()
-    local char = LocalPlayer.Character
-    if not char then return "Unknown" end
-    for _, v in ipairs(char:GetChildren()) do
-        if v:IsA("StringValue") and v.Name:lower():find("fruit") then
-            return v.Value
-        end
-    end
-    return "Unknown"
-end
 
 local function getMouseRay(targetPos)
     local origin = workspace.CurrentCamera.CFrame.Position
@@ -64,20 +47,22 @@ local function teleportToNPC(name)
     end
 end
 
--- Skill spam loop
+-- Skill spam loop using keys 1–6 + MouseButton1
 spawn(function()
     while wait(math.random(1.2, 2.5)) do
         if farming then
-            local fruit = getCurrentFruit()
-            local skills = fruitSkills[fruit]
-            if skills then
-                local rayTarget = bossFarming and getBoss() or (Character:FindFirstChild("HumanoidRootPart") and Character.HumanoidRootPart.Position - Vector3.new(0, 10, 0))
-                if rayTarget then
-                    for _, skill in ipairs(skills) do
-                        remote:FireServer(fruit, skill, getMouseRay(rayTarget.Position or rayTarget))
-                        wait(math.random(0.4, 0.8))
-                    end
-                end
+            local target = bossFarming and getBoss()
+            if target then
+                local mouseRay = getMouseRay(target.Position)
+            end
+
+            for key = 1, 6 do
+                VirtualInputManager:SendKeyEvent(true, tostring(key), false, game)
+                wait(0.05)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                wait(0.05)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+                wait(math.random(0.4, 0.6))
             end
         end
     end
@@ -158,4 +143,4 @@ tpSlotBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-print("✅ DOMFRUITHUB v2 Loaded")
+print("✅ DOMFRUITHUB v2 (Input-based Skill Spam) Loaded")
