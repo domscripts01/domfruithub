@@ -1,12 +1,9 @@
--- DOMFRUITHUB FINAL FIXED VERSION
--- Cleaned and reverted to known working logic + full fruit support
+-- DOMFRUITHUB DYNAMIC FRUIT VERSION
+-- Auto-detects equipped fruit and uses correct skills
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local player = Players.LocalPlayer
-local remote = ReplicatedStorage:WaitForChild("ReplicatorNoYield")
-
-print("✅ Script loaded successfully")
+local player = game.Players.LocalPlayer
+local rs = game:GetService("ReplicatedStorage")
+local remote = rs:WaitForChild("ReplicatorNoYield")
 
 local fruitSkills = {
     Barrier = {"Barrier Wall", "Barrier Crush", "Barrier Dome", "Barrier Pistol"},
@@ -50,15 +47,8 @@ local fruitSkills = {
     Okuchi = {"Wolf Fang", "Wolf Howl", "Wolf Dash", "Wolf Transformation"}
 }
 
-local function getCurrentFruit()
-    local char = player.Character or player.CharacterAdded:Wait()
-    for _, v in ipairs(char:GetChildren()) do
-        if v:IsA("StringValue") and v.Name:lower():find("fruit") then
-            return v.Value
-        end
-    end
-    return "Unknown"
-end
+local farming = false
+local safeFarmPosition = Vector3.new(3000, 50, -1200)
 
 local function getMouseRay()
     local origin = workspace.CurrentCamera.CFrame.Position
@@ -72,66 +62,43 @@ local function getMouseRay()
     }
 end
 
-local farming = false
+local function getCurrentFruit()
+    local char = player.Character or player.CharacterAdded:Wait()
+    for _, v in ipairs(char:GetChildren()) do
+        if v:IsA("StringValue") and v.Name:lower():find("fruit") then
+            return v.Value
+        end
+    end
+    return "Unknown"
+end
 
 -- Farming loop
-spawn(function()
-    while task.wait(1.5) do
+task.spawn(function()
+    while true do
         if farming then
-            Character = player.Character or player.CharacterAdded:Wait() -- 🔥 THIS LINE FIXES IT
-            fruit = getCurrentFruit()
-            skillList = fruitSkills[fruit] or {}
-
-            if #skillList > 0 then
-                local ray = getMouseRay()
-                local target = bossFarm and getBoss()
-                if target then
-                    ray = {MouseRay = Ray.new(workspace.CurrentCamera.CFrame.Position, (target.Position - workspace.CurrentCamera.CFrame.Position).Unit * 100)}
-                end
+            local fruitName = getCurrentFruit()
+            local skillList = fruitSkills[fruitName]
+            if skillList then
                 for _, skill in ipairs(skillList) do
-                    remote:FireServer(fruit, skill, ray)
-                    task.wait(0.4)
+                    remote:FireServer(fruitName, skill, getMouseRay())
+                    task.wait(0.5)
                 end
             end
         end
+        task.wait(2)
     end
 end)
+
+-- Teleport to safe zone
+local function teleportToSafeSpot()
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(safeFarmPosition)
+    end
+end
 
 -- GUI
 local gui = Instance.new("ScreenGui", game.CoreGui)
-local frame = Instance.new("Frame", gui)
-frame.Position = UDim2.new(0.05, 0, 0.3, 0)
-frame.Size = UDim2.new(0, 200, 0, 120)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
-
-local toggleButton = Instance.new("TextButton", frame)
-toggleButton.Position = UDim2.new(0, 10, 0, 10)
-toggleButton.Size = UDim2.new(0, 180, 0, 40)
-toggleButton.Text = "Toggle Farm: OFF"
-toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-toggleButton.MouseButton1Click:Connect(function()
-    farming = not farming
-    toggleButton.Text = farming and "Toggle Farm: ON" or "Toggle Farm: OFF"
-end)
-
-local tpButton = Instance.new("TextButton", frame)
-tpButton.Position = UDim2.new(0, 10, 0, 60)
-tpButton.Size = UDim2.new(0, 180, 0, 40)
-tpButton.Text = "📍 Teleport to Kuma"
-tpButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-tpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-tpButton.MouseButton1Click:Connect(function()
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("Model") and v.Name == "Kuma" and v:FindFirstChild("HumanoidRootPart") then
-            local char = player.Character or player.CharacterAdded:Wait()
-            char:WaitForChild("HumanoidRootPart").CFrame = v.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-            break
-        end
-    end
-end)
-
-print("✅ DOMFRUITHUB FINAL FIXED VERSION LOADED")
+gu...
+    }
+  ]
+}
